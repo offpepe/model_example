@@ -7,7 +7,6 @@ const booksModel = require('./models/books');
 const app = express();  
 app.use(bodyParser.json());
 const PORT = 3000;
-
 app.get('/', (_req, res) => res.status(200).send('Hello World 👨‍🚀🚀'));
 
 app.get('/authors', async (_req, res) => {

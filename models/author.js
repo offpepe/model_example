@@ -1,35 +1,51 @@
 const connection = require('./connection');
+const { ObjectId } = require('mongodb');
 
-
-const formatData =  ({ id, first_name, middle_name, last_name }) => {
-    const fullname = [first_name, middle_name, last_name].filter((name) => name).join(' ');
+const formatData =  ({ id, firstName, middleName, lastName }) => {
+    const fullName = [firstName, middleName, lastName].filter((name) => name).join(' ');
     return {
-        id: id,
-        firstName: first_name,
-        middleName: middle_name,
-        lastName: last_name,
-        fullName: fullname,
+        id,
+        firstName,
+        middleName,
+        lastName,
+        fullName,
     }
 }
 
 const getAll = async () => {
-    const [authors] = await connection.execute('SELECT id, first_name, middle_name, last_name FROM authors');
-    return authors.map(formatData);
+    return connection().then((db) => db.collection('authors').find().toArray())
+    .then((authors) => {
+        return authors
+        .map(({ _id, firstName, middleName, lastName }) => formatData({
+            id: _id,
+            firstName,
+            middleName,
+            lastName,
+          }))
+    })
 };
 
 const getByID = async (id) => {
-    const [authors] = await connection.execute('SELECT id, first_name, middle_name, last_name FROM authors WHERE id=?',[id]);
-    if (authors.length === 0) {
-      return null;
-    } else {
-    return authors.map(formatData);
-    }
+  return connection().then((db) => db.collection('authors').findOne(ObjectId(id)))
+  .then((authors) => {
+      const { _id, firstName, middleName, lastName } = authors;
+      return formatData({
+          id: _id,
+          firstName,
+          middleName,
+          lastName,
+        });
+  })
 }
 
 const insertNewAuthor = async ({ firstName, middleName, lastName, birthday, nationality }) => {
-    const [operation] = await connection.execute(`INSERT INTO model_example.authors (first_name,middle_name,last_name,birthday,nationality) VALUES (?,?,?,?,?)`,
-    [firstName, middleName, lastName, birthday, nationality]);
-    return operation;
+    try {
+      await connection().then((db) => db.collection('authors')
+      .insertOne({ firstName, middleName, lastName, birthday, nationality }));
+      return "Autor adicionado com Sucesso!";
+    } catch (error) {
+      return error.message;
+    }
 }
 
 module.exports = {
